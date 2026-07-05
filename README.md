@@ -39,4 +39,4 @@ Pour l'activer une fois :
 2. Source : **GitHub Actions**.
 3. Merge cette branche sur `main` (ou déclenche le workflow manuellement depuis l'onglet Actions).
 
-L'app sera alors accessible depuis n'importe quel appareil à l'URL `https://<ton-org>.github.io/habits/`.
+L'app sera alors accessible depuis n'importe quel appareil à l'URL `https://damien-ancora.github.io/Habits/`.
