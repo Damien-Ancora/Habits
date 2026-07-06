@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { useStore } from '../store/useStore'
-import { HABIT_CATEGORIES, ALL_HABIT_IDS } from '../data/habits'
+import { ALL_HABIT_IDS, categoriesByTime } from '../data/habits'
 import { CategoryChecklist } from '../components/CategoryChecklist'
 import { DateNav } from '../components/DateNav'
+import { DayPlan } from '../components/DayPlan'
 import { Card } from '../components/ui/Card'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { RatingDots } from '../components/ui/RatingDots'
@@ -10,6 +12,16 @@ import { getPhase, isSunday, weekIndexForKey } from '../lib/date'
 interface Props {
   date: string
   onChangeDate: (date: string) => void
+}
+
+function SectionHeader({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
+  return (
+    <div className="flex items-baseline gap-2 mt-2 mb-0.5 px-1">
+      <span className="text-base leading-none">{icon}</span>
+      <h2 className="text-sm font-bold uppercase tracking-wide opacity-70">{title}</h2>
+      {hint && <span className="text-xs opacity-40">{hint}</span>}
+    </div>
+  )
 }
 
 export function Today({ date, onChangeDate }: Props) {
@@ -26,6 +38,16 @@ export function Today({ date, onChangeDate }: Props) {
   const phase = getPhase(date, settings)
   const weekIdx = weekIndexForKey(date, settings)
   const sunday = isSunday(date)
+
+  const renderCategories = (time: 'morning' | 'day' | 'evening'): ReactNode =>
+    categoriesByTime(time).map((cat) => (
+      <CategoryChecklist
+        key={cat.id}
+        category={cat}
+        checks={checks}
+        onToggle={(habitId) => toggleCheck(date, habitId)}
+      />
+    ))
 
   return (
     <div className="flex flex-col gap-4 pb-24">
@@ -80,8 +102,21 @@ export function Today({ date, onChangeDate }: Props) {
         </div>
       </Card>
 
+      {/* ---------- DÉBUT DE JOURNÉE ---------- */}
+      <SectionHeader icon="☀️" title="Début de journée" />
+      <DayPlan date={date} />
+      {renderCategories('morning')}
+
+      {/* ---------- AU COURS DE LA JOURNÉE ---------- */}
+      <SectionHeader icon="📋" title="Au cours de la journée" />
+      {renderCategories('day')}
+
+      {/* ---------- FIN DE JOURNÉE ---------- */}
+      <SectionHeader icon="🌙" title="Fin de journée" />
+      {renderCategories('evening')}
+
       <Card className="p-4 flex flex-col gap-4">
-        <p className="font-semibold text-sm">Métriques rapides</p>
+        <p className="font-semibold text-sm">Bilan du jour — métriques</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 text-xs opacity-70">
             Poids (kg)
@@ -134,27 +169,27 @@ export function Today({ date, onChangeDate }: Props) {
         </label>
       </Card>
 
-      {sunday && (
-        <Card className="p-4 border-2 border-dashed">
-          <p className="font-semibold text-sm mb-1">Bilan du dimanche (5 lignes)</p>
-          <p className="text-xs opacity-60 mb-2">Ce qui a marché, ce qui a merdé, pourquoi.</p>
-          <textarea
-            value={entry?.sundayBilan ?? ''}
-            onChange={(e) => updateEntry(date, { sundayBilan: e.target.value })}
-            rows={5}
-            className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm resize-none"
-          />
-        </Card>
-      )}
-
-      {HABIT_CATEGORIES.map((cat) => (
-        <CategoryChecklist
-          key={cat.id}
-          category={cat}
-          checks={checks}
-          onToggle={(habitId) => toggleCheck(date, habitId)}
+      {/* ---------- RAPPORT HEBDOMADAIRE ---------- */}
+      <SectionHeader icon="📅" title="Rapport hebdomadaire" hint="à faire en fin de semaine" />
+      <Card className={`p-4 border-2 border-dashed ${sunday ? 'border-emerald-400 dark:border-emerald-500/50' : ''}`}>
+        <div className="flex items-center justify-between mb-1">
+          <p className="font-semibold text-sm">Bilan de la semaine (5 lignes)</p>
+          {sunday && (
+            <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">c'est dimanche</span>
+          )}
+        </div>
+        <p className="text-xs opacity-60 mb-2">Ce qui a marché, ce qui a merdé, pourquoi. À remplir chaque dimanche.</p>
+        <textarea
+          value={entry?.sundayBilan ?? ''}
+          onChange={(e) => updateEntry(date, { sundayBilan: e.target.value })}
+          rows={5}
+          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm resize-none"
+          placeholder={sunday ? '' : "Tu peux le préparer n'importe quand — l'idéal reste le dimanche."}
         />
-      ))}
+        <p className="text-xs opacity-50 mt-2">
+          Les jalons de la semaine (photos, check-ins…) sont dans l'onglet <strong>Programme</strong>.
+        </p>
+      </Card>
     </div>
   )
 }

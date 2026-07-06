@@ -1,9 +1,16 @@
 export type DayType = 'entrainement' | 'repos'
 
+export interface DayPlanItem {
+  id: string
+  text: string
+  done: boolean
+}
+
 export interface DayEntry {
   date: string // yyyy-MM-dd
   dayType: DayType
   checks: Record<string, boolean>
+  dayPlan?: DayPlanItem[]
   weightKg?: number
   sleepHours?: number
   energy?: number // 1-5

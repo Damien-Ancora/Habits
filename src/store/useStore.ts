@@ -42,10 +42,19 @@ interface Store {
   toggleCheck: (date: string, habitId: string) => void
   setDayType: (date: string, dayType: DayType) => void
   updateEntry: (date: string, patch: Partial<DayEntry>) => void
+  addDayPlanItem: (date: string, text: string) => void
+  toggleDayPlanItem: (date: string, itemId: string) => void
+  updateDayPlanItemText: (date: string, itemId: string, text: string) => void
+  removeDayPlanItem: (date: string, itemId: string) => void
   setWeekMilestone: (weekKey: string, itemId: string, value: boolean | string) => void
   updateSettings: (patch: Partial<Settings>) => void
   replaceState: (next: AppState) => void
   resetAll: () => void
+}
+
+function newId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 export const useStore = create<Store>()(
@@ -90,6 +99,64 @@ export const useStore = create<Store>()(
               ...s.state,
               updatedAt: Date.now(),
               entries: { ...s.state.entries, [date]: { ...entry, ...patch } },
+            },
+          }
+        }),
+
+      addDayPlanItem: (date, text) =>
+        set((s) => {
+          const trimmed = text.trim()
+          if (!trimmed) return s
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const dayPlan = [...(entry.dayPlan ?? []), { id: newId(), text: trimmed, done: false }]
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, dayPlan } },
+            },
+          }
+        }),
+
+      toggleDayPlanItem: (date, itemId) =>
+        set((s) => {
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const dayPlan = (entry.dayPlan ?? []).map((it) =>
+            it.id === itemId ? { ...it, done: !it.done } : it,
+          )
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, dayPlan } },
+            },
+          }
+        }),
+
+      updateDayPlanItemText: (date, itemId, text) =>
+        set((s) => {
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const dayPlan = (entry.dayPlan ?? []).map((it) =>
+            it.id === itemId ? { ...it, text } : it,
+          )
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, dayPlan } },
+            },
+          }
+        }),
+
+      removeDayPlanItem: (date, itemId) =>
+        set((s) => {
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const dayPlan = (entry.dayPlan ?? []).filter((it) => it.id !== itemId)
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, dayPlan } },
             },
           }
         }),
