@@ -1,4 +1,4 @@
-import { addDays, format, parseISO, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
+import { addDays, addMonths, format, parseISO, startOfMonth, endOfMonth, isSameDay, getDay } from 'date-fns'
 import type { Settings } from '../types'
 
 export function toKey(date: Date): string {
@@ -111,4 +111,32 @@ export function lastNDaysKeys(n: number, fromDateKey?: string): string[] {
     keys.push(toKey(addDays(end, -i)))
   }
   return keys
+}
+
+// Monday-first month grid. Returns weeks of 7 cells; null = padding day.
+export function monthMatrix(year: number, month0: number): (string | null)[][] {
+  const first = new Date(year, month0, 1)
+  const start = startOfMonth(first)
+  const end = endOfMonth(first)
+  const leading = (getDay(start) + 6) % 7 // Mon=0 … Sun=6
+  const cells: (string | null)[] = []
+  for (let i = 0; i < leading; i++) cells.push(null)
+  let cur = start
+  while (cur <= end) {
+    cells.push(toKey(cur))
+    cur = addDays(cur, 1)
+  }
+  while (cells.length % 7 !== 0) cells.push(null)
+  const weeks: (string | null)[][] = []
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  return weeks
+}
+
+export function monthLabel(year: number, month0: number): string {
+  return format(new Date(year, month0, 1), 'MMMM yyyy')
+}
+
+export function shiftMonth(year: number, month0: number, delta: number): { year: number; month0: number } {
+  const d = addMonths(new Date(year, month0, 1), delta)
+  return { year: d.getFullYear(), month0: d.getMonth() }
 }

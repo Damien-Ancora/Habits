@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Today } from './pages/Today'
 import { Nutrition } from './pages/Nutrition'
+import { Journal } from './pages/Journal'
 import { Analytics } from './pages/Analytics'
 import { Program } from './pages/Program'
 import { Settings } from './pages/Settings'
 import { useSupabaseSync } from './hooks/useSupabaseSync'
 import { toKey, today } from './lib/date'
 
-type Tab = 'today' | 'nutrition' | 'analytics' | 'program' | 'settings'
+type Tab = 'today' | 'nutrition' | 'journal' | 'analytics' | 'program' | 'settings'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'today', label: 'Aujourd’hui', icon: '✓' },
+  { id: 'today', label: "Aujourd’hui", icon: '✓' },
   { id: 'nutrition', label: 'Nutrition', icon: '🍽' },
-  { id: 'analytics', label: 'Analytique', icon: '📊' },
+  { id: 'journal', label: 'Journal', icon: '📅' },
+  { id: 'analytics', label: 'Stats', icon: '📊' },
   { id: 'program', label: 'Programme', icon: '📘' },
   { id: 'settings', label: 'Partage', icon: '⚙' },
 ]
@@ -28,11 +30,17 @@ const STATUS_DOT: Record<string, string> = {
 export default function App() {
   const [tab, setTab] = useState<Tab>('today')
   const [date, setDate] = useState(toKey(today()))
+  const [journalDate, setJournalDate] = useState(toKey(today()))
   const sync = useSupabaseSync()
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [tab])
+
+  function openInToday(d: string) {
+    setDate(d)
+    setTab('today')
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row max-w-5xl mx-auto">
@@ -64,18 +72,21 @@ export default function App() {
       <main className="flex-1 px-4 pt-2 md:pt-6 md:px-6 max-w-2xl w-full mx-auto">
         {tab === 'today' && <Today date={date} onChangeDate={setDate} />}
         {tab === 'nutrition' && <Nutrition date={date} onChangeDate={setDate} />}
+        {tab === 'journal' && (
+          <Journal selectedDate={journalDate} onSelectDate={setJournalDate} onOpenInToday={openInToday} />
+        )}
         {tab === 'analytics' && <Analytics />}
         {tab === 'program' && <Program />}
         {tab === 'settings' && <Settings sync={sync} />}
       </main>
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-black/8 dark:border-white/10 bg-white/90 dark:bg-[#0e0f13]/90 backdrop-blur grid grid-cols-5 no-print">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-black/8 dark:border-white/10 bg-white/90 dark:bg-[#0e0f13]/90 backdrop-blur grid grid-cols-6 no-print">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${
+            className={`flex flex-col items-center gap-0.5 py-2.5 text-[9px] font-medium transition-colors ${
               tab === t.id ? 'text-emerald-600 dark:text-emerald-400' : 'opacity-50'
             }`}
           >

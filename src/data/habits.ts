@@ -3,11 +3,14 @@ export interface HabitItem {
   label: string
 }
 
+export type TimeOfDay = 'morning' | 'day' | 'evening'
+
 export interface HabitCategory {
   id: string
   title: string
   subtitle: string
   color: string // tailwind color token base, e.g. 'emerald'
+  timeOfDay: TimeOfDay
   items: HabitItem[]
 }
 
@@ -17,6 +20,7 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
     title: 'Non-négociables',
     subtitle: 'Tout le mois, sans exception',
     color: 'rose',
+    timeOfDay: 'day',
     items: [
       { id: 'nn_sleep', label: 'Sommeil : viser 8h cette nuit' },
       { id: 'nn_protein', label: 'Protéines ~195g réparties à chaque repas' },
@@ -29,6 +33,7 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
     title: 'Routine matinale',
     subtitle: 'Bloc 1',
     color: 'amber',
+    timeOfDay: 'morning',
     items: [
       { id: 'm_phone', label: 'Pas de téléphone pendant la 1ère heure — aucune exception' },
       { id: 'm_water', label: "Grand verre d'eau + citron + pincée de sel au réveil" },
@@ -38,7 +43,6 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
       { id: 'm_shot', label: "Shot santé (gingembre, curcuma, citron, sel, huile d'olive) à jeun" },
       { id: 'm_coffee', label: 'Pas de café dans la 1ère heure (attendre 90 min)' },
       { id: 'm_instagram', label: 'Pas de scroll Instagram au réveil' },
-      { id: 'm_plan', label: 'Organiser sa journée (10 min) : 3 tâches max, la moins aimée en premier, plan écrit' },
     ],
   },
   {
@@ -46,6 +50,7 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
     title: 'Entraînement',
     subtitle: 'Adapté à ton volume actuel',
     color: 'sky',
+    timeOfDay: 'day',
     items: [
       { id: 't_renfo', label: "Renfo sur les gros mouvements, charges progressives, jamais à l'échec" },
       { id: 't_steps', label: '10 000 pas — marche 10 min après chaque repas principal' },
@@ -58,6 +63,7 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
     title: 'Nutrition — comportements',
     subtitle: 'Le détail des macros est dans l\'onglet Nutrition',
     color: 'emerald',
+    timeOfDay: 'day',
     items: [
       { id: 'n_noHungryShopping', label: 'Pas de courses en ayant faim (liste préparée)' },
       { id: 'n_order', label: "Ordre dans l'assiette : protéines + légumes d'abord, glucides ensuite" },
@@ -71,6 +77,7 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
     title: 'Routine du soir',
     subtitle: 'Bloc 4',
     color: 'indigo',
+    timeOfDay: 'evening',
     items: [
       { id: 'e_noAlcohol', label: "Pas d'alcool" },
       { id: 'e_noHeavyMeal', label: 'Pas de repas lourd après 20h' },
@@ -85,6 +92,16 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
 ]
 
 export const ALL_HABIT_IDS: string[] = HABIT_CATEGORIES.flatMap((c) => c.items.map((i) => i.id))
+
+export function categoriesByTime(t: TimeOfDay): HabitCategory[] {
+  return HABIT_CATEGORIES.filter((c) => c.timeOfDay === t)
+}
+
+export const TIME_SECTIONS: { id: TimeOfDay; title: string; icon: string }[] = [
+  { id: 'morning', title: 'Début de journée', icon: '☀️' },
+  { id: 'day', title: 'Au cours de la journée', icon: '📋' },
+  { id: 'evening', title: 'Fin de journée', icon: '🌙' },
+]
 
 export interface MacroTarget {
   calories: number

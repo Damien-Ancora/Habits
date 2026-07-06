@@ -105,6 +105,15 @@ export function Nutrition({ date, onChangeDate }: Props) {
           <li>Snacks : yaourt grec + fruits, poignée d'amandes</li>
         </ul>
       </Card>
+
+      <Card className="p-4 bg-black/3 dark:bg-white/5">
+        <p className="font-semibold text-sm mb-1">🔌 Import automatique — à venir</p>
+        <p className="text-xs opacity-65">
+          L'idée d'importer automatiquement tes macros depuis MyFitnessPal est notée. MyFitnessPal n'offre plus d'API
+          publique gratuite, donc on explorera une alternative (import de fichier, ou une base alimentaire comme Open
+          Food Facts). En attendant, la saisie manuelle ci-dessus alimente déjà tes statistiques et ton journal.
+        </p>
+      </Card>
     </div>
   )
 }
