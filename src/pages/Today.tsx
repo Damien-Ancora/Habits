@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { ALL_HABIT_IDS, HABIT_CATEGORIES } from '../data/habits'
 import { CategoryChecklist } from '../components/CategoryChecklist'
+import { RoutineChecklist } from '../components/RoutineChecklist'
 import { DayCalendar } from '../components/DayCalendar'
 import { DayPlan } from '../components/DayPlan'
 import { TrainingLog } from '../components/TrainingLog'
@@ -101,7 +102,7 @@ export function Today({ date, onChangeDate, onOpenResources }: Props) {
           <div className="flex-1">
             <p className="font-semibold text-sm">Bilan du jour</p>
             <p className="text-xs opacity-55 mb-2">
-              {done}/{ALL_HABIT_IDS.length} non-négociables · {entry?.trainings?.length ?? 0} entraînement(s)
+              {done}/{ALL_HABIT_IDS.length} coché(s) · {entry?.trainings?.length ?? 0} entraînement(s)
             </p>
             <div className="flex rounded-lg overflow-hidden border border-black/10 dark:border-white/15 text-xs">
               <button
@@ -187,7 +188,7 @@ export function Today({ date, onChangeDate, onOpenResources }: Props) {
       {/* Entraînements */}
       <TrainingLog date={date} />
 
-      {/* Checklists (non-négociables + routines) */}
+      {/* Non-négociables */}
       {HABIT_CATEGORIES.map((cat) => (
         <CategoryChecklist
           key={cat.id}
@@ -197,6 +198,9 @@ export function Today({ date, onChangeDate, onOpenResources }: Props) {
           onOpenInfo={onOpenResources}
         />
       ))}
+
+      {/* Routines (case unique + détail dépliable) */}
+      <RoutineChecklist date={date} onOpenInfo={onOpenResources} />
 
       {/* Rapport hebdomadaire — seulement sam/dim (ou lundi si pas fait) */}
       {showWeekly ? (
