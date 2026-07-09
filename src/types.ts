@@ -6,11 +6,21 @@ export interface DayPlanItem {
   done: boolean
 }
 
+export type TrainingType = 'musculation' | 'mma' | 'muaythai' | 'course' | 'autre'
+
+export interface TrainingSession {
+  id: string
+  type: TrainingType
+  durationMin?: number
+  note?: string
+}
+
 export interface DayEntry {
   date: string // yyyy-MM-dd
   dayType: DayType
   checks: Record<string, boolean>
   dayPlan?: DayPlanItem[]
+  trainings?: TrainingSession[]
   weightKg?: number
   sleepHours?: number
   energy?: number // 1-5
@@ -21,11 +31,14 @@ export interface DayEntry {
   carbs?: number
   fat?: number
   note?: string
-  sundayBilan?: string
+  sundayBilan?: string // legacy — migrated into WeeklyReport.bilan
 }
 
-export interface WeekMilestoneAnswer {
-  [itemId: string]: boolean | string
+export interface WeeklyReport {
+  restDayTaken?: boolean
+  lighterWeek?: boolean
+  bilan?: string
+  milestones?: Record<string, boolean | string>
 }
 
 export interface Settings {
@@ -43,5 +56,10 @@ export interface AppState {
   updatedAt: number
   settings: Settings
   entries: Record<string, DayEntry>
-  weekMilestones: Record<string, WeekMilestoneAnswer>
+  weekMilestones: Record<string, WeekMilestoneAnswer> // legacy (program S1-S4)
+  weeklyReports: Record<string, WeeklyReport> // keyed by ISO week e.g. 2026-W28
+}
+
+export interface WeekMilestoneAnswer {
+  [itemId: string]: boolean | string
 }

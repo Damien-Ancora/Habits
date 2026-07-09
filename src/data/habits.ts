@@ -1,107 +1,48 @@
+import type { TrainingType } from '../types'
+
 export interface HabitItem {
   id: string
   label: string
+  infoRef?: string // id of a Ressources section that details this item
 }
-
-export type TimeOfDay = 'morning' | 'day' | 'evening'
 
 export interface HabitCategory {
   id: string
   title: string
   subtitle: string
   color: string // tailwind color token base, e.g. 'emerald'
-  timeOfDay: TimeOfDay
   items: HabitItem[]
 }
 
+// Daily checklist kept deliberately short — the "how to" details live in the
+// Ressources tab, not as checkboxes.
 export const HABIT_CATEGORIES: HabitCategory[] = [
   {
     id: 'nonNeg',
     title: 'Non-négociables',
-    subtitle: 'Tout le mois, sans exception',
+    subtitle: 'Chaque jour, sans exception',
     color: 'rose',
-    timeOfDay: 'day',
     items: [
-      { id: 'nn_sleep', label: 'Sommeil : viser 8h cette nuit' },
-      { id: 'nn_protein', label: 'Protéines ~195g réparties à chaque repas' },
+      { id: 'nn_sleep', label: 'Sommeil : viser ~8h' },
+      { id: 'nn_protein', label: 'Protéines ~195g, réparties à chaque repas' },
       { id: 'nn_phone', label: "Pas de téléphone la 1ère heure, pas de scroll au lit" },
-      { id: 'nn_move', label: 'Bouger un minimum (même en vacances)' },
+      { id: 'nn_alcohol', label: "Pas d'alcool" },
+      { id: 'nn_move', label: 'Bougé un minimum — marche après les repas' },
     ],
   },
   {
-    id: 'matin',
-    title: 'Routine matinale',
-    subtitle: 'Bloc 1',
+    id: 'routines',
+    title: 'Routines',
+    subtitle: 'Le détail est dans Ressources',
     color: 'amber',
-    timeOfDay: 'morning',
     items: [
-      { id: 'm_phone', label: 'Pas de téléphone pendant la 1ère heure — aucune exception' },
-      { id: 'm_water', label: "Grand verre d'eau + citron + pincée de sel au réveil" },
-      { id: 'm_breath', label: '5 grandes respirations profondes avant de se lever' },
-      { id: 'm_stretch', label: "5-10 min d'étirements légers" },
-      { id: 'm_shower', label: "Douche chaude terminée par 30 sec d'eau froide" },
-      { id: 'm_shot', label: "Shot santé (gingembre, curcuma, citron, sel, huile d'olive) à jeun" },
-      { id: 'm_coffee', label: 'Pas de café dans la 1ère heure (attendre 90 min)' },
-      { id: 'm_instagram', label: 'Pas de scroll Instagram au réveil' },
-    ],
-  },
-  {
-    id: 'sport',
-    title: 'Entraînement',
-    subtitle: 'Adapté à ton volume actuel',
-    color: 'sky',
-    timeOfDay: 'day',
-    items: [
-      { id: 't_renfo', label: "Renfo sur les gros mouvements, charges progressives, jamais à l'échec" },
-      { id: 't_steps', label: '10 000 pas — marche 10 min après chaque repas principal' },
-      { id: 't_goAnyway', label: 'Règle du « y aller quand même » respectée' },
-      { id: 't_recup', label: 'Récupération respectée (1 séance en moins / jour off si prévu)' },
-    ],
-  },
-  {
-    id: 'nutrition',
-    title: 'Nutrition — comportements',
-    subtitle: 'Le détail des macros est dans l\'onglet Nutrition',
-    color: 'emerald',
-    timeOfDay: 'day',
-    items: [
-      { id: 'n_noHungryShopping', label: 'Pas de courses en ayant faim (liste préparée)' },
-      { id: 'n_order', label: "Ordre dans l'assiette : protéines + légumes d'abord, glucides ensuite" },
-      { id: 'n_waterMeal', label: "Grand verre d'eau avant chaque repas" },
-      { id: 'n_mealprep', label: 'Meal prep respecté (1-2x/semaine)' },
-      { id: 'n_freeMeal', label: 'Repas libre assumé, sans culpabilité (si applicable aujourd\'hui)' },
-    ],
-  },
-  {
-    id: 'soir',
-    title: 'Routine du soir',
-    subtitle: 'Bloc 4',
-    color: 'indigo',
-    timeOfDay: 'evening',
-    items: [
-      { id: 'e_noAlcohol', label: "Pas d'alcool" },
-      { id: 'e_noHeavyMeal', label: 'Pas de repas lourd après 20h' },
-      { id: 'e_noScreens', label: "Pas d'écrans 30 min avant de dormir, pas de scroll" },
-      { id: 'e_review', label: 'Bilan rapide : sport fait ? nutrition correcte ? 3 tâches cochées ?' },
-      { id: 'e_prep', label: 'Préparer le lendemain (tenue, repas, planning)' },
-      { id: 'e_reading', label: 'Lecture/podcast 20-30 min' },
-      { id: 'e_fixedBedtime', label: 'Heure de coucher fixe' },
-      { id: 'e_learn', label: "S'instruire 15-20 min (podcast, lecture)" },
+      { id: 'r_morning', label: 'Routine du matin faite', infoRef: 'reveil' },
+      { id: 'r_evening', label: 'Routine du soir faite', infoRef: 'coucher' },
     ],
   },
 ]
 
 export const ALL_HABIT_IDS: string[] = HABIT_CATEGORIES.flatMap((c) => c.items.map((i) => i.id))
-
-export function categoriesByTime(t: TimeOfDay): HabitCategory[] {
-  return HABIT_CATEGORIES.filter((c) => c.timeOfDay === t)
-}
-
-export const TIME_SECTIONS: { id: TimeOfDay; title: string; icon: string }[] = [
-  { id: 'morning', title: 'Début de journée', icon: '☀️' },
-  { id: 'day', title: 'Au cours de la journée', icon: '📋' },
-  { id: 'evening', title: 'Fin de journée', icon: '🌙' },
-]
 
 export interface MacroTarget {
   calories: number
@@ -128,4 +69,16 @@ export const NUTRITION_TARGETS: Record<DayTypeKey, MacroTarget> = {
     carbsRange: [160, 160],
     fat: 95,
   },
+}
+
+export const TRAINING_TYPES: { id: TrainingType; label: string; icon: string; color: string }[] = [
+  { id: 'musculation', label: 'Musculation', icon: '🏋️', color: 'sky' },
+  { id: 'mma', label: 'MMA', icon: '🥋', color: 'rose' },
+  { id: 'muaythai', label: 'Muay Thaï', icon: '🥊', color: 'amber' },
+  { id: 'course', label: 'Course', icon: '🏃', color: 'emerald' },
+  { id: 'autre', label: 'Autre', icon: '💪', color: 'indigo' },
+]
+
+export function trainingMeta(type: TrainingType) {
+  return TRAINING_TYPES.find((t) => t.id === type) ?? TRAINING_TYPES[4]
 }

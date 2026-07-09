@@ -1,6 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { AppState, DayEntry, DayType, Settings, WeekMilestoneAnswer } from '../types'
+import type {
+  AppState,
+  DayEntry,
+  DayType,
+  Settings,
+  TrainingSession,
+  TrainingType,
+  WeekMilestoneAnswer,
+  WeeklyReport,
+} from '../types'
 
 const STORAGE_KEY = 'disimpline-app-state'
 const STATE_VERSION = 1
@@ -25,6 +34,7 @@ export function defaultAppState(): AppState {
     settings: defaultSettings(),
     entries: {},
     weekMilestones: {},
+    weeklyReports: {},
   }
 }
 
@@ -46,7 +56,12 @@ interface Store {
   toggleDayPlanItem: (date: string, itemId: string) => void
   updateDayPlanItemText: (date: string, itemId: string, text: string) => void
   removeDayPlanItem: (date: string, itemId: string) => void
+  addTraining: (date: string, type: TrainingType) => void
+  updateTraining: (date: string, id: string, patch: Partial<TrainingSession>) => void
+  removeTraining: (date: string, id: string) => void
   setWeekMilestone: (weekKey: string, itemId: string, value: boolean | string) => void
+  updateWeeklyReport: (weekKey: string, patch: Partial<WeeklyReport>) => void
+  setWeeklyMilestone: (weekKey: string, itemId: string, value: boolean | string) => void
   updateSettings: (patch: Partial<Settings>) => void
   replaceState: (next: AppState) => void
   resetAll: () => void
@@ -161,6 +176,45 @@ export const useStore = create<Store>()(
           }
         }),
 
+      addTraining: (date, type) =>
+        set((s) => {
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const trainings = [...(entry.trainings ?? []), { id: newId(), type }]
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, trainings } },
+            },
+          }
+        }),
+
+      updateTraining: (date, id, patch) =>
+        set((s) => {
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const trainings = (entry.trainings ?? []).map((t) => (t.id === id ? { ...t, ...patch } : t))
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, trainings } },
+            },
+          }
+        }),
+
+      removeTraining: (date, id) =>
+        set((s) => {
+          const entry = s.state.entries[date] ?? emptyEntry(date)
+          const trainings = (entry.trainings ?? []).filter((t) => t.id !== id)
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              entries: { ...s.state.entries, [date]: { ...entry, trainings } },
+            },
+          }
+        }),
+
       setWeekMilestone: (weekKey, itemId, value) =>
         set((s) => {
           const current: WeekMilestoneAnswer = s.state.weekMilestones[weekKey] ?? {}
@@ -176,6 +230,31 @@ export const useStore = create<Store>()(
           }
         }),
 
+      updateWeeklyReport: (weekKey, patch) =>
+        set((s) => {
+          const current = s.state.weeklyReports[weekKey] ?? {}
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              weeklyReports: { ...s.state.weeklyReports, [weekKey]: { ...current, ...patch } },
+            },
+          }
+        }),
+
+      setWeeklyMilestone: (weekKey, itemId, value) =>
+        set((s) => {
+          const current = s.state.weeklyReports[weekKey] ?? {}
+          const milestones = { ...(current.milestones ?? {}), [itemId]: value }
+          return {
+            state: {
+              ...s.state,
+              updatedAt: Date.now(),
+              weeklyReports: { ...s.state.weeklyReports, [weekKey]: { ...current, milestones } },
+            },
+          }
+        }),
+
       updateSettings: (patch) =>
         set((s) => ({
           state: {
@@ -185,13 +264,34 @@ export const useStore = create<Store>()(
           },
         })),
 
-      replaceState: (next) => set({ state: next }),
+      replaceState: (next) =>
+        set({
+          state: {
+            ...defaultAppState(),
+            ...next,
+            weekMilestones: next.weekMilestones ?? {},
+            weeklyReports: next.weeklyReports ?? {},
+          },
+        }),
 
       resetAll: () => set({ state: defaultAppState() }),
     }),
     {
       name: STORAGE_KEY,
       partialize: (s) => ({ state: s.state }),
+      merge: (persisted, current) => {
+        const p = persisted as { state?: Partial<AppState> } | undefined
+        if (!p?.state) return current
+        return {
+          ...current,
+          state: {
+            ...defaultAppState(),
+            ...p.state,
+            weekMilestones: p.state.weekMilestones ?? {},
+            weeklyReports: p.state.weeklyReports ?? {},
+          },
+        }
+      },
     },
   ),
 )

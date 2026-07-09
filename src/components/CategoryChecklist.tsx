@@ -7,10 +7,10 @@ interface Props {
   category: HabitCategory
   checks: Record<string, boolean>
   onToggle: (habitId: string) => void
-  defaultOpen?: boolean
+  onOpenInfo?: (ref: string) => void
 }
 
-export function CategoryChecklist({ category, checks, onToggle }: Props) {
+export function CategoryChecklist({ category, checks, onToggle, onOpenInfo }: Props) {
   const color = colorFor(category.color)
   const done = category.items.filter((i) => checks[i.id]).length
   const total = category.items.length
@@ -33,21 +33,32 @@ export function CategoryChecklist({ category, checks, onToggle }: Props) {
           const checked = !!checks[item.id]
           return (
             <li key={item.id}>
-              <label className="flex items-start gap-2.5 cursor-pointer group select-none">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => onToggle(item.id)}
-                  className="mt-0.5 h-4 w-4 shrink-0 rounded"
-                />
-                <span
-                  className={`text-sm leading-snug transition-colors ${
-                    checked ? 'opacity-45 line-through' : 'group-hover:opacity-80'
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </label>
+              <div className="flex items-start gap-2.5">
+                <label className="flex items-start gap-2.5 cursor-pointer group select-none flex-1">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onToggle(item.id)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded"
+                  />
+                  <span
+                    className={`text-sm leading-snug transition-colors ${
+                      checked ? 'opacity-45 line-through' : 'group-hover:opacity-80'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </label>
+                {item.infoRef && onOpenInfo && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenInfo(item.infoRef!)}
+                    className={`shrink-0 text-[11px] ${color.text} opacity-80 underline underline-offset-2`}
+                  >
+                    voir
+                  </button>
+                )}
+              </div>
             </li>
           )
         })}

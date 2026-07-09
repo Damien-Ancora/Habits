@@ -1,123 +1,128 @@
-import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { useStore } from '../store/useStore'
-import { ALL_HABIT_IDS, categoriesByTime } from '../data/habits'
+import { ALL_HABIT_IDS, HABIT_CATEGORIES } from '../data/habits'
 import { CategoryChecklist } from '../components/CategoryChecklist'
-import { DateNav } from '../components/DateNav'
+import { DayCalendar } from '../components/DayCalendar'
 import { DayPlan } from '../components/DayPlan'
+import { TrainingLog } from '../components/TrainingLog'
+import { WeeklyReport } from '../components/WeeklyReport'
 import { Card } from '../components/ui/Card'
-import { ProgressBar } from '../components/ui/ProgressBar'
+import { ProgressRing } from '../components/ui/ProgressRing'
 import { RatingDots } from '../components/ui/RatingDots'
-import { getPhase, isSunday, weekIndexForKey } from '../lib/date'
+import {
+  formatHuman,
+  getPhase,
+  isoWeekKey,
+  isTodayKey,
+  shiftDay,
+  weeklyReportVisible,
+} from '../lib/date'
 
 interface Props {
   date: string
   onChangeDate: (date: string) => void
+  onOpenResources: (ref?: string) => void
 }
 
-function SectionHeader({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
-  return (
-    <div className="flex items-baseline gap-2 mt-2 mb-0.5 px-1">
-      <span className="text-base leading-none">{icon}</span>
-      <h2 className="text-sm font-bold uppercase tracking-wide opacity-70">{title}</h2>
-      {hint && <span className="text-xs opacity-40">{hint}</span>}
-    </div>
-  )
-}
-
-export function Today({ date, onChangeDate }: Props) {
+export function Today({ date, onChangeDate, onOpenResources }: Props) {
   const settings = useStore((s) => s.state.settings)
   const entry = useStore((s) => s.state.entries[date])
+  const weeklyReport = useStore((s) => s.state.weeklyReports[isoWeekKey(date)])
   const toggleCheck = useStore((s) => s.toggleCheck)
   const setDayType = useStore((s) => s.setDayType)
   const updateEntry = useStore((s) => s.updateEntry)
+  const [calendarOpen, setCalendarOpen] = useState(false)
 
   const checks = entry?.checks ?? {}
   const dayType = entry?.dayType ?? 'entrainement'
   const done = ALL_HABIT_IDS.filter((id) => checks[id]).length
   const pct = (done / ALL_HABIT_IDS.length) * 100
   const phase = getPhase(date, settings)
-  const weekIdx = weekIndexForKey(date, settings)
-  const sunday = isSunday(date)
-
-  const renderCategories = (time: 'morning' | 'day' | 'evening'): ReactNode =>
-    categoriesByTime(time).map((cat) => (
-      <CategoryChecklist
-        key={cat.id}
-        category={cat}
-        checks={checks}
-        onToggle={(habitId) => toggleCheck(date, habitId)}
-      />
-    ))
+  const showWeekly = weeklyReportVisible(date, weeklyReport)
 
   return (
     <div className="flex flex-col gap-4 pb-24">
-      <DateNav date={date} onChange={onChangeDate} />
-
-      {phase.id !== 'hors-periode' && (
-        <Card className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="font-semibold text-sm">{phase.label}</p>
-            {weekIdx > 0 && <span className="text-xs opacity-60 shrink-0 whitespace-nowrap">Semaine {weekIdx}</span>}
-          </div>
-          <ul className="text-xs opacity-70 list-disc pl-4 flex flex-col gap-0.5">
-            {phase.focus.map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-        </Card>
+      {calendarOpen && (
+        <DayCalendar selected={date} onSelect={onChangeDate} onClose={() => setCalendarOpen(false)} />
       )}
 
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="font-semibold text-sm">Complétion du jour</p>
-          <span className="text-sm font-bold">{Math.round(pct)}%</span>
+      {/* Header: calendar button + date */}
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="button"
+          onClick={() => setCalendarOpen(true)}
+          className="h-10 w-10 shrink-0 rounded-xl border border-black/10 dark:border-white/15 flex items-center justify-center text-lg active:scale-95 transition-transform"
+          aria-label="Ouvrir le calendrier"
+        >
+          📅
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold capitalize text-[15px] leading-tight truncate">{formatHuman(date)}</p>
+          {isTodayKey(date) ? (
+            <p className="text-xs opacity-55">Aujourd'hui</p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onChangeDate(new Date().toISOString().slice(0, 10))}
+              className="text-xs text-sky-600 dark:text-sky-400 underline underline-offset-2"
+            >
+              revenir à aujourd'hui
+            </button>
+          )}
         </div>
-        <ProgressBar value={pct} colorHex="#10b981" height={10} />
-        <p className="text-xs opacity-60 mt-2">
-          {done}/{ALL_HABIT_IDS.length} habitudes cochées
-        </p>
-      </Card>
-
-      <Card className="p-4">
-        <p className="font-semibold text-sm mb-2">Type de journée</p>
-        <div className="flex rounded-xl overflow-hidden border border-black/10 dark:border-white/15">
+        <div className="flex gap-1 shrink-0">
           <button
             type="button"
-            onClick={() => setDayType(date, 'entrainement')}
-            className={`flex-1 py-2 text-sm font-medium transition-colors ${
-              dayType === 'entrainement' ? 'bg-sky-500 text-white' : 'opacity-60'
-            }`}
+            onClick={() => onChangeDate(shiftDay(date, -1))}
+            className="h-9 w-9 rounded-full border border-black/10 dark:border-white/15 flex items-center justify-center"
+            aria-label="Jour précédent"
           >
-            Entraînement
+            ‹
           </button>
           <button
             type="button"
-            onClick={() => setDayType(date, 'repos')}
-            className={`flex-1 py-2 text-sm font-medium transition-colors ${
-              dayType === 'repos' ? 'bg-indigo-500 text-white' : 'opacity-60'
-            }`}
+            onClick={() => onChangeDate(shiftDay(date, 1))}
+            className="h-9 w-9 rounded-full border border-black/10 dark:border-white/15 flex items-center justify-center"
+            aria-label="Jour suivant"
           >
-            Calme / repos
+            ›
           </button>
         </div>
-      </Card>
+      </div>
 
-      {/* ---------- DÉBUT DE JOURNÉE ---------- */}
-      <SectionHeader icon="☀️" title="Début de journée" />
-      <DayPlan date={date} />
-      {renderCategories('morning')}
+      {/* ---------- BILAN DU JOUR (en haut) ---------- */}
+      <Card className="p-4">
+        <div className="flex items-center gap-4">
+          <ProgressRing value={pct} colorHex="#10b981">
+            <div className="text-center">
+              <p className="text-lg font-bold leading-none">{Math.round(pct)}%</p>
+            </div>
+          </ProgressRing>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Bilan du jour</p>
+            <p className="text-xs opacity-55 mb-2">
+              {done}/{ALL_HABIT_IDS.length} non-négociables · {entry?.trainings?.length ?? 0} entraînement(s)
+            </p>
+            <div className="flex rounded-lg overflow-hidden border border-black/10 dark:border-white/15 text-xs">
+              <button
+                type="button"
+                onClick={() => setDayType(date, 'entrainement')}
+                className={`flex-1 py-1.5 font-medium ${dayType === 'entrainement' ? 'bg-sky-500 text-white' : 'opacity-60'}`}
+              >
+                Entraînement
+              </button>
+              <button
+                type="button"
+                onClick={() => setDayType(date, 'repos')}
+                className={`flex-1 py-1.5 font-medium ${dayType === 'repos' ? 'bg-indigo-500 text-white' : 'opacity-60'}`}
+              >
+                Repos
+              </button>
+            </div>
+          </div>
+        </div>
 
-      {/* ---------- AU COURS DE LA JOURNÉE ---------- */}
-      <SectionHeader icon="📋" title="Au cours de la journée" />
-      {renderCategories('day')}
-
-      {/* ---------- FIN DE JOURNÉE ---------- */}
-      <SectionHeader icon="🌙" title="Fin de journée" />
-      {renderCategories('evening')}
-
-      <Card className="p-4 flex flex-col gap-4">
-        <p className="font-semibold text-sm">Bilan du jour — métriques</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mt-4">
           <label className="flex flex-col gap-1 text-xs opacity-70">
             Poids (kg)
             <input
@@ -143,53 +148,73 @@ export function Today({ date, onChangeDate }: Props) {
             />
           </label>
         </div>
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs opacity-70">Énergie</span>
+        <div className="flex flex-col gap-2.5 mt-3">
+          <Row label="Énergie">
             <RatingDots value={entry?.energy} onChange={(v) => updateEntry(date, { energy: v })} colorHex="#f59e0b" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs opacity-70">Mental</span>
+          </Row>
+          <Row label="Mental">
             <RatingDots value={entry?.mental} onChange={(v) => updateEntry(date, { mental: v })} colorHex="#6366f1" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs opacity-70">Confiance</span>
+          </Row>
+          <Row label="Confiance">
             <RatingDots value={entry?.confidence} onChange={(v) => updateEntry(date, { confidence: v })} colorHex="#10b981" />
-          </div>
+          </Row>
         </div>
-        <label className="flex flex-col gap-1 text-xs opacity-70">
-          Note du jour
-          <textarea
-            value={entry?.note ?? ''}
-            onChange={(e) => updateEntry(date, { note: e.target.value })}
-            rows={2}
-            className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm resize-none"
-            placeholder="Ce qui a marché, ce qui a merdé..."
-          />
-        </label>
+        <textarea
+          value={entry?.note ?? ''}
+          onChange={(e) => updateEntry(date, { note: e.target.value })}
+          rows={2}
+          className="mt-3 w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm resize-none"
+          placeholder="Note du jour…"
+        />
       </Card>
 
-      {/* ---------- RAPPORT HEBDOMADAIRE ---------- */}
-      <SectionHeader icon="📅" title="Rapport hebdomadaire" hint="à faire en fin de semaine" />
-      <Card className={`p-4 border-2 border-dashed ${sunday ? 'border-emerald-400 dark:border-emerald-500/50' : ''}`}>
-        <div className="flex items-center justify-between mb-1">
-          <p className="font-semibold text-sm">Bilan de la semaine (5 lignes)</p>
-          {sunday && (
-            <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">c'est dimanche</span>
-          )}
-        </div>
-        <p className="text-xs opacity-60 mb-2">Ce qui a marché, ce qui a merdé, pourquoi. À remplir chaque dimanche.</p>
-        <textarea
-          value={entry?.sundayBilan ?? ''}
-          onChange={(e) => updateEntry(date, { sundayBilan: e.target.value })}
-          rows={5}
-          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm resize-none"
-          placeholder={sunday ? '' : "Tu peux le préparer n'importe quand — l'idéal reste le dimanche."}
+      {phase.id !== 'hors-periode' && (
+        <button
+          type="button"
+          onClick={() => onOpenResources('phase-thailande')}
+          className="text-left"
+        >
+          <Card className="p-3">
+            <p className="text-xs font-medium">{phase.label}</p>
+            <p className="text-[11px] opacity-55 mt-0.5">{phase.focus[0]}</p>
+          </Card>
+        </button>
+      )}
+
+      {/* Organisation de la journée */}
+      <DayPlan date={date} />
+
+      {/* Entraînements */}
+      <TrainingLog date={date} />
+
+      {/* Checklists (non-négociables + routines) */}
+      {HABIT_CATEGORIES.map((cat) => (
+        <CategoryChecklist
+          key={cat.id}
+          category={cat}
+          checks={checks}
+          onToggle={(habitId) => toggleCheck(date, habitId)}
+          onOpenInfo={onOpenResources}
         />
-        <p className="text-xs opacity-50 mt-2">
-          Les jalons de la semaine (photos, check-ins…) sont dans l'onglet <strong>Programme</strong>.
+      ))}
+
+      {/* Rapport hebdomadaire — seulement sam/dim (ou lundi si pas fait) */}
+      {showWeekly ? (
+        <WeeklyReport date={date} />
+      ) : (
+        <p className="text-center text-xs opacity-40 mt-1">
+          Le rapport de la semaine s'ouvre le week-end.
         </p>
-      </Card>
+      )}
+    </div>
+  )
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-xs opacity-70">{label}</span>
+      {children}
     </div>
   )
 }
