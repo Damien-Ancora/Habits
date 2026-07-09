@@ -1,5 +1,33 @@
-import { addDays, addMonths, format, parseISO, startOfMonth, endOfMonth, isSameDay, getDay } from 'date-fns'
-import type { Settings } from '../types'
+import {
+  addDays,
+  addMonths,
+  format,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  isSameDay,
+  getDay,
+  getISOWeek,
+  getISOWeekYear,
+} from 'date-fns'
+import type { Settings, WeeklyReport } from '../types'
+
+export function isoWeekKey(key: string): string {
+  const d = fromKey(key)
+  return `${getISOWeekYear(d)}-W${String(getISOWeek(d)).padStart(2, '0')}`
+}
+
+// The weekly report is offered only on Sat/Sun, or Mon if it wasn't done yet.
+export function weeklyReportVisible(key: string, report: WeeklyReport | undefined): boolean {
+  const dow = getDay(fromKey(key)) // 0 Sun … 6 Sat
+  if (dow === 6 || dow === 0) return true
+  if (dow === 1) return !isWeeklyReportDone(report)
+  return false
+}
+
+export function isWeeklyReportDone(report: WeeklyReport | undefined): boolean {
+  return !!report?.bilan && report.bilan.trim().length > 0
+}
 
 export function toKey(date: Date): string {
   return format(date, 'yyyy-MM-dd')
